@@ -1,0 +1,47 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+# Firebase iOS SDK needs frameworks; RNFB pods themselves are forced to static
+# libraries in pre_install below (official RNFB fix for RN 0.81+, issue #8657).
+use_frameworks! :linkage => :static
+$RNFirebaseAsStaticFramework = true
+
+# Official react-native-firebase fix for "non-modular header inside framework
+# module" with RN CLI + prebuilt React-Core: build RNFB pods as static libraries
+# so they are never compiled as framework modules.
+pre_install do |installer|
+  installer.pod_targets.each do |pod|
+    # RNFB pods import non-modular React headers under prebuilt React-Core.
+    if pod.name.start_with?('RNFB')
+      def pod.build_type
+        Pod::BuildType.static_library
+      end
+    end
+  end
+end
+
+target 'AlaznahExample' do
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false,
+      # :ccache_enabled => true
+    )
+  end
+end

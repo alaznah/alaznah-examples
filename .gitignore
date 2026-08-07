@@ -1,0 +1,16 @@
+node_modules/
+.expo/
+dist/
+build/
+.turbo/
+.env
+.env.*
+**/android/.gradle/
+**/android/app/build/
+**/ios/Pods/
+**/ios/build/
+*.p8
+google-services.json
+GoogleService-Info.plist
+*.jks
+*.keystore

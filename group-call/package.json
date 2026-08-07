@@ -1,0 +1,9 @@
+{
+  "name": "@alaznah/example-group-call",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Placeholder for future SFU group-call demo (Phase 2+)",
+  "scripts": {
+    "start": "node -e \"console.log('group-call example is reserved for Phase 2 SFU work')\""
+  }
+}
