@@ -1,34 +1,39 @@
 # Alaznah Examples
 
-**Repository:** [Alaznah/alaznah-examples](https://github.com/Alaznah/alaznah-examples)  
-**Status:** Public
+**Status:** Public · sample apps only
 
-Sample React Native apps for **Alaznah Calling**. Use these to validate signaling, TURN, and SDK integration against Alaznah Cloud or a self-hosted stack.
+Reference React Native apps for **Alaznah Calling**. Clone this repo to try 1:1 audio/video against Alaznah Cloud.
+
+These apps are **examples** — not published packages. Keep them on GitHub; consume the SDK from npm (`@alaznah/calling`) in real products.
 
 ## Apps
 
-| Folder | Focus |
-| --- | --- |
-| `basic-call/` | Primary 1:1 audio/video demo (iOS + Android) |
-| `video-chat/` | Lightweight video-oriented scaffold |
-| `group-call/` | Reserved for future group / SFU demos |
 
-Exact package names live in each app’s `package.json`.
+| Folder        | Focus                                        |
+| ------------- | -------------------------------------------- |
+| `basic-call/` | Primary 1:1 audio/video demo (iOS + Android) |
+| `video-chat/` | Lightweight video-oriented scaffold          |
+| `group-call/` | Reserved for future group demos              |
+
+
+See each app’s `package.json` for its local package name.
 
 ## Prerequisites
 
 - Node 18+
 - Xcode / Android Studio as needed
-- Alaznah Calling SDK ([alaznah-sdk](https://github.com/Alaznah/alaznah-sdk))
-- Calling JWT from [alaznah.dev](https://alaznah.dev) (or your mint backend)
-- Signaling URL, e.g. `wss://signal.alaznah.com`
+- `@alaznah/calling` (from npm when published, or a local path during SDK development)
+- Short-lived calling tokens from [console.alaznah.com](https://console.alaznah.com) (or your own mint API)
+- Signaling URL: `wss://signal.alaznah.com`
+
+
 
 ## Quick start (`basic-call`)
 
 ```bash
 cd basic-call
 npm install
-# configure signalingUrl + getAuthToken in the app entry
+# set signalingUrl + getAuthToken in the app entry
 
 # iOS
 cd ios && pod install && cd ..
@@ -38,24 +43,31 @@ npm run ios
 npm run android
 ```
 
-Do **not** commit Firebase private keys, APNs `.p8`, or production API keys. Use env files / CI secrets (gitignored).
+Do **not** commit push certificates, service-account JSON, or production API keys. Use gitignored env / CI secrets.
 
-## Configuration checklist
+## Checklist
 
-- [ ] `signalingUrl` → `wss://signal.alaznah.com` (or self-host)
-- [ ] Short-lived JWT via your backend → docs mint API
-- [ ] Same `userId` space on both devices for 1:1 tests
-- [ ] Physical devices for VoIP / FCM kill-state tests
+- [ ] `signalingUrl` → `wss://signal.alaznah.com`
+- [ ] Fresh token from your backend / console mint API
+- [ ] Same `userId` space on both test devices
+- [ ] Physical devices for background / kill-state call tests
 
-## Related repositories
 
-| Repo | Role |
+
+## Links
+
+
+| Resource | URL |
 | --- | --- |
-| [alaznah-sdk](https://github.com/Alaznah/alaznah-sdk) | SDK source |
-| [alaznah-docs](https://github.com/Alaznah/alaznah-docs) | Console + JWT |
-| [alaznah-signaling](https://github.com/Alaznah/alaznah-signaling) | Server stack |
-| [alaznah-protocol](https://github.com/Alaznah/alaznah-protocol) | Wire protocol |
+| Docs | [docs.alaznah.com](https://docs.alaznah.com) |
+| Console | [console.alaznah.com](https://console.alaznah.com) |
+| SDK | [alaznah/alaznah-sdk](https://github.com/alaznah/alaznah-sdk) |
+| Protocol | [alaznah/alaznah-protocol](https://github.com/alaznah/alaznah-protocol) |
+| Signaling (private) | [alaznah/alaznah-signaling](https://github.com/alaznah/alaznah-signaling) |
+
+
+
 
 ## License
 
-MIT for sample code unless a subdirectory states otherwise. Alaznah trademarks remain Alaznah’s.
+MIT for sample code unless a subdirectory says otherwise. Alaznah trademarks remain Alaznah’s.
