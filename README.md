@@ -22,7 +22,7 @@ See each app’s `package.json` for its local package name.
 
 - Node 18+
 - Xcode / Android Studio as needed
-- `@alaznah/calling` (from npm when published, or a local path during SDK development)
+- [`@alaznah/calling`](https://www.npmjs.com/package/@alaznah/calling) from npm (`npm install @alaznah/calling`)
 - Short-lived calling tokens from [console.alaznah.com](https://console.alaznah.com) (or your own mint API)
 - Signaling URL: `wss://signal.alaznah.com`
 
