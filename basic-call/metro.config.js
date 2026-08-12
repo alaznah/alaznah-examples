@@ -2,9 +2,15 @@ const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 const fs = require('fs');
 const path = require('path');
 
-const workspaceRoot = path.resolve(__dirname, '../..');
-const sdkRoot = path.join(workspaceRoot, 'sdk');
+const projectRoot = __dirname;
+const repoRoot = path.resolve(__dirname, '../..');
+const sdkRoot = path.join(repoRoot, 'alaznah-sdk');
 const sdkSrc = path.join(sdkRoot, 'src');
+
+const appReact = path.resolve(projectRoot, 'node_modules/react');
+const appReactNative = path.resolve(projectRoot, 'node_modules/react-native');
+const appBabelRuntime = path.resolve(projectRoot, 'node_modules/@babel/runtime');
+const protocolRoot = path.join(sdkRoot, 'node_modules/@alaznah/protocol');
 
 /**
  * TypeScript ESM imports use `.js` extensions, but files are `.ts`/`.tsx`.
@@ -16,7 +22,6 @@ function resolveSdkJsToTs(originModulePath, moduleName) {
   }
   const origin = path.resolve(originModulePath);
   if (!origin.startsWith(sdkSrc + path.sep) && origin !== path.join(sdkSrc, 'index.ts')) {
-    // Also allow any file under sdk/src
     if (!origin.startsWith(sdkSrc)) return null;
   }
 
@@ -27,7 +32,6 @@ function resolveSdkJsToTs(originModulePath, moduleName) {
       return { filePath: candidate, type: 'sourceFile' };
     }
   }
-  // directory index
   for (const ext of ['.tsx', '.ts', '.js']) {
     const candidate = path.join(absBase, 'index' + ext);
     if (fs.existsSync(candidate)) {
@@ -37,16 +41,36 @@ function resolveSdkJsToTs(originModulePath, moduleName) {
   return null;
 }
 
+function resolveFromApp(context, moduleName, platform) {
+  // Force resolution as if the importer lived in the app — avoids SDK's
+  // nested react@18 / react-native@0.76 copies (causes CallingProvider undefined).
+  return context.resolveRequest(
+    {
+      ...context,
+      originModulePath: path.join(projectRoot, 'package.json'),
+      nodeModulesPaths: [path.resolve(projectRoot, 'node_modules')],
+    },
+    moduleName,
+    platform,
+  );
+}
+
 const config = {
-  watchFolders: [workspaceRoot],
+  projectRoot,
+  watchFolders: [sdkRoot],
   resolver: {
     unstable_enablePackageExports: true,
+    // Prefer app node_modules; still allow SDK deps (protocol, etc.).
     nodeModulesPaths: [
-      path.resolve(__dirname, 'node_modules'),
-      path.resolve(workspaceRoot, 'node_modules'),
+      path.resolve(projectRoot, 'node_modules'),
+      path.resolve(sdkRoot, 'node_modules'),
     ],
     extraNodeModules: {
       '@alaznah/calling': sdkRoot,
+      '@alaznah/protocol': protocolRoot,
+      react: appReact,
+      'react-native': appReactNative,
+      '@babel/runtime': appBabelRuntime,
     },
     resolveRequest: (context, moduleName, platform) => {
       if (moduleName === '@alaznah/calling') {
@@ -60,6 +84,18 @@ const config = {
           filePath: path.join(sdkSrc, 'components/index.ts'),
           type: 'sourceFile',
         };
+      }
+
+      if (
+        moduleName === 'react' ||
+        moduleName === 'react/jsx-runtime' ||
+        moduleName === 'react/jsx-dev-runtime' ||
+        moduleName === 'react-native' ||
+        moduleName.startsWith('react-native/') ||
+        moduleName === '@babel/runtime' ||
+        moduleName.startsWith('@babel/runtime/')
+      ) {
+        return resolveFromApp(context, moduleName, platform);
       }
 
       const sdkHit = resolveSdkJsToTs(context.originModulePath, moduleName);

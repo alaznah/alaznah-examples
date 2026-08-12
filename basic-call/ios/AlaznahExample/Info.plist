@@ -38,7 +38,7 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Local network access is required to reach the signaling server during development.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Local network access is required to reach the signaling server.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Microphone access is required for audio and video calls.</string>
 	<key>RCTNewArchEnabled</key>

@@ -12,6 +12,7 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import {
   CallingProvider,
+  CallingUI,
   handleBackgroundIncomingCall,
   useCall,
   useCallingClient,
@@ -19,14 +20,13 @@ import {
   useIncomingCall,
   useWakingForCall,
 } from '@alaznah/calling';
-import { CallingUI } from '@alaznah/calling/ui';
 import { clearSession, loadSession, saveSession } from './src/session';
 import useFirebase from './src/useFirebase';
 
 // Physical devices must use the Mac/Laptop LAN IP (not localhost / 10.0.2.2).
 const DEFAULT_SIGNALING_URL = Platform.select({
-  ios: 'ws://192.168.114.114:8080',
-  android: 'ws://192.168.114.114:8080',
+  ios: 'ws://192.168.0.102:8080',
+  android: 'ws://192.168.0.102:8080',
   default: 'ws://192.168.114.114:8080',
 })!;
 const PREVIOUS_LAN_URLS = [
@@ -152,87 +152,98 @@ function CallingScreen({
   const showDialer = ready && !callActive && !showIncoming && !wakingForCall;
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <StatusBar barStyle="light-content" backgroundColor={DOCS.bg} />
-      <View style={styles.header}>
-        {!wakingForCall ? (
-          <>
-            <Text style={styles.title}>Alaznah Calling</Text>
-            <Text style={styles.subtitle}>Signed in as {userId}</Text>
-            <View style={styles.statusRow}>
-              <View style={[styles.dot, ready ? styles.online : styles.offline]} />
-              <Text style={styles.status}>{status}</Text>
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onLogout}
-              style={styles.logoutLink}
-            >
-              <Text style={styles.logoutText}>Logout / clear session</Text>
-            </Pressable>
-          </>
-        ) : null}
-      </View>
+    <View style={styles.root}>
+      <SafeAreaView style={styles.screen}>
+        <StatusBar barStyle="light-content" backgroundColor={DOCS.bg} />
+        <View style={styles.header}>
+          {!wakingForCall ? (
+            <>
+              <Text style={styles.title}>Alaznah Calling</Text>
+              <Text style={styles.subtitle}>Signed in as {userId}</Text>
+              <View style={styles.statusRow}>
+                <View
+                  style={[styles.dot, ready ? styles.online : styles.offline]}
+                />
+                <Text style={styles.status}>{status}</Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                onPress={onLogout}
+                style={styles.logoutLink}
+              >
+                <Text style={styles.logoutText}>Logout / clear session</Text>
+              </Pressable>
+            </>
+          ) : null}
+        </View>
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      {!ready ? (
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {!ready ? (
           <ActivityIndicator color={DOCS.accent} style={styles.loader} />
-      ) : null}
+        ) : null}
 
-      {wakingForCall && !callActive ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={DOCS.accent} size="large" />
-          <Text style={styles.subtitle}>Connecting call…</Text>
-        </View>
-      ) : null}
-
-      {showDialer && !callActive && !showIncoming ? (
-        <View style={styles.card}>
-          <Text style={styles.label}>Call user</Text>
-          <TextInput
-            accessibilityLabel="Peer user ID"
-            autoCapitalize="none"
-            autoCorrect={false}
-            onChangeText={setPeerId}
-            placeholder="bob"
-            placeholderTextColor={DOCS.textMuted}
-            style={styles.input}
-            value={peerId}
-          />
-          <View style={styles.row}>
-            <DialerButton
-              disabled={!ready || !peerId.trim()}
-              label="Audio call"
-              onPress={() =>
-                run(() =>
-                  client.startCall({
-                    calleeId: peerId.trim(),
-                    mediaType: 'audio',
-                  }),
-                )
-              }
-            />
-            <DialerButton
-              disabled={!ready || !peerId.trim()}
-              label="Video call"
-              onPress={() =>
-                run(() =>
-                  client.startCall({
-                    calleeId: peerId.trim(),
-                    mediaType: 'video',
-                  }),
-                )
-              }
-            />
+        {wakingForCall && !callActive ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={DOCS.accent} size="large" />
+            <Text style={styles.subtitle}>Connecting call…</Text>
           </View>
-          <Text style={styles.hint}>
-            Default UI is WhatsApp-style from the SDK (`CallingUI`). Override
-            theme/slots or replace screens entirely. iOS lock-screen/killed
-            presentation remains native CallKit.
-          </Text>
-        </View>
-      ) : null}
+        ) : null}
 
+        {showDialer && !callActive && !showIncoming ? (
+          <View style={styles.card}>
+            <Text style={styles.label}>Call user</Text>
+            <TextInput
+              accessibilityLabel="Peer user ID"
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={setPeerId}
+              placeholder="bob"
+              placeholderTextColor={DOCS.textMuted}
+              style={styles.input}
+              value={peerId}
+            />
+            <View style={styles.row}>
+              <DialerButton
+                disabled={!ready || !peerId.trim()}
+                label="Audio call"
+                onPress={() =>
+                  run(() =>
+                    client.startCall({
+                      calleeId: peerId.trim(),
+                      calleeDisplayName: peerId.trim(),
+                      mediaType: 'audio',
+                    }),
+                  )
+                }
+              />
+              <DialerButton
+                disabled={!ready || !peerId.trim()}
+                label="Video call"
+                onPress={() =>
+                  run(() =>
+                    client.startCall({
+                      calleeId: peerId.trim(),
+                      calleeDisplayName: peerId.trim(),
+                      mediaType: 'video',
+                    }),
+                  )
+                }
+              />
+            </View>
+            <Text style={styles.hint}>
+              Default UI is WhatsApp-style from the SDK (`CallingUI`). Override
+              theme/slots or replace screens entirely. iOS lock-screen/killed
+              presentation remains native CallKit.
+            </Text>
+          </View>
+        ) : null}
+      </SafeAreaView>
+
+      {/*
+        CallingUI sits on the Activity root (outside SafeAreaView) so Android
+        system PiP captures the call surface. Full-screen UI still uses Modal
+        inside CallingUI — layout is unchanged from the proven Modal path.
+      */}
       <CallingUI
         client={client}
         onError={err => setError(err.message)}
@@ -253,7 +264,7 @@ function CallingScreen({
           },
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -361,6 +372,7 @@ function App() {
         config={{
           signalingUrl: signalingUrl.trim(),
           userId: identity.trim(),
+          displayName: identity.trim(),
           deviceId: deviceId ?? undefined,
           getAuthToken: async () => `dev:${identity.trim()}`,
           ringTimeoutMs: RING_TIMEOUT_MS,
@@ -382,6 +394,10 @@ function App() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: DOCS.bg,
+  },
   screen: {
     flex: 1,
     backgroundColor: DOCS.bg,
