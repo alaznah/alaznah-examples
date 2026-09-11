@@ -260,11 +260,6 @@ function CallingScreen({
         ) : null}
       </SafeAreaView>
 
-      {/*
-        CallingUI sits on the Activity root (outside SafeAreaView) so Android
-        system PiP captures the call surface. Full-screen UI still uses Modal
-        inside CallingUI — layout is unchanged from the proven Modal path.
-      */}
       <CallingUI
         client={client}
         onError={err => setError(err.message)}
