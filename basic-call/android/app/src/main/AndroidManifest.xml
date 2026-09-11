@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -33,28 +32,11 @@
         android:windowSoftInputMode="adjustResize"
         android:supportsPictureInPicture="true"
         android:resizeableActivity="true"
-        android:showWhenLocked="true"
-        android:turnScreenOn="true"
         android:exported="true">
         <intent-filter>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
-
-      <!-- Replace RN Firebase receiver so call invite/cancel are handled natively
-           (kill-state JS is unreliable and was duplicating notifications). -->
-      <receiver
-        android:name="io.invertase.firebase.messaging.ReactNativeFirebaseMessagingReceiver"
-        tools:node="remove" />
-      <receiver
-        android:name=".CallMessagingReceiver"
-        android:exported="true"
-        android:permission="com.google.android.c2dm.permission.SEND">
-        <intent-filter>
-          <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-        </intent-filter>
-      </receiver>
-
     </application>
 </manifest>

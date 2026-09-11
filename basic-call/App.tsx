@@ -20,13 +20,14 @@ import {
   useIncomingCall,
   useWakingForCall,
 } from '@alaznah/calling';
+import { getPeerDisplayName } from '@alaznah/calling/ui';
 import { clearSession, loadSession, saveSession } from './src/session';
 import useFirebase from './src/useFirebase';
 
 // Physical devices must use the Mac/Laptop LAN IP (not localhost / 10.0.2.2).
 const DEFAULT_SIGNALING_URL = Platform.select({
-  ios: 'ws://192.168.0.102:8080',
-  android: 'ws://192.168.0.102:8080',
+  ios: 'ws://192.168.114.114:8080',
+  android: 'ws://192.168.114.114:8080',
   default: 'ws://192.168.114.114:8080',
 })!;
 const PREVIOUS_LAN_URLS = [
@@ -79,9 +80,11 @@ function DialerButton({
 
 function CallingScreen({
   userId,
+  displayName,
   onLogout,
 }: {
   userId: string;
+  displayName: string;
   onLogout: () => void;
 }) {
   const client = useCallingClient();
@@ -96,6 +99,9 @@ function CallingScreen({
     initialNotification,
   } = useFirebase();
   const [peerId, setPeerId] = useState(userId === 'alice' ? 'bob' : 'alice');
+  const [peerDisplayName, setPeerDisplayName] = useState(
+    userId === 'alice' ? 'Bob' : 'Alice',
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -113,7 +119,9 @@ function CallingScreen({
       initialNotification?.data;
     if (!data) return;
     if (data.type === 'call_canceled' && typeof data.callId === 'string') {
-      void handleBackgroundIncomingCall({ data }).finally(() => {
+      void handleBackgroundIncomingCall({
+        data: { callId: data.callId },
+      }).finally(() => {
         void client.syncPendingCalls().catch(() => undefined);
       });
       return;
@@ -132,9 +140,11 @@ function CallingScreen({
   const status = useMemo(() => {
     if (!ready) return 'Connecting to signaling…';
     if (incoming?.state === 'ringing') {
-      return `Incoming ${incoming.mediaType} call from ${incoming.peerId}`;
+      return `Incoming ${incoming.mediaType} call from ${getPeerDisplayName(
+        incoming,
+      )}`;
     }
-    if (call) return `${call.peerId}: ${call.state}`;
+    if (call) return `${getPeerDisplayName(call)}: ${call.state}`;
     return 'Ready to call';
   }, [call, incoming, ready]);
 
@@ -159,7 +169,7 @@ function CallingScreen({
           {!wakingForCall ? (
             <>
               <Text style={styles.title}>Alaznah Calling</Text>
-              <Text style={styles.subtitle}>Signed in as {userId}</Text>
+              <Text style={styles.subtitle}>Signed in as {displayName}</Text>
               <View style={styles.statusRow}>
                 <View
                   style={[styles.dot, ready ? styles.online : styles.offline]}
@@ -191,7 +201,7 @@ function CallingScreen({
 
         {showDialer && !callActive && !showIncoming ? (
           <View style={styles.card}>
-            <Text style={styles.label}>Call user</Text>
+            <Text style={styles.label}>Call user ID</Text>
             <TextInput
               accessibilityLabel="Peer user ID"
               autoCapitalize="none"
@@ -202,28 +212,39 @@ function CallingScreen({
               style={styles.input}
               value={peerId}
             />
+            <Text style={styles.label}>Their display name</Text>
+            <TextInput
+              accessibilityLabel="Peer display name"
+              autoCapitalize="words"
+              autoCorrect={false}
+              onChangeText={setPeerDisplayName}
+              placeholder="Bob"
+              placeholderTextColor={DOCS.textMuted}
+              style={styles.input}
+              value={peerDisplayName}
+            />
             <View style={styles.row}>
               <DialerButton
-                disabled={!ready || !peerId.trim()}
+                disabled={!ready || !peerId.trim() || !peerDisplayName.trim()}
                 label="Audio call"
                 onPress={() =>
                   run(() =>
                     client.startCall({
                       calleeId: peerId.trim(),
-                      calleeDisplayName: peerId.trim(),
+                      calleeDisplayName: peerDisplayName.trim(),
                       mediaType: 'audio',
                     }),
                   )
                 }
               />
               <DialerButton
-                disabled={!ready || !peerId.trim()}
+                disabled={!ready || !peerId.trim() || !peerDisplayName.trim()}
                 label="Video call"
                 onPress={() =>
                   run(() =>
                     client.startCall({
                       calleeId: peerId.trim(),
-                      calleeDisplayName: peerId.trim(),
+                      calleeDisplayName: peerDisplayName.trim(),
                       mediaType: 'video',
                     }),
                   )
@@ -231,7 +252,7 @@ function CallingScreen({
               />
             </View>
             <Text style={styles.hint}>
-              Default UI is WhatsApp-style from the SDK (`CallingUI`). Override
+              Default UI is Alaznah-style from the SDK (CallingUI). Override
               theme/slots or replace screens entirely. iOS lock-screen/killed
               presentation remains native CallKit.
             </Text>
@@ -270,6 +291,7 @@ function CallingScreen({
 
 function App() {
   const [identity, setIdentity] = useState('alice');
+  const [displayName, setDisplayName] = useState('Alice');
   const [signalingUrl, setSignalingUrl] = useState(DEFAULT_SIGNALING_URL);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
@@ -282,6 +304,7 @@ function App() {
       if (cancelled) return;
       if (saved) {
         setIdentity(saved.userId);
+        setDisplayName(saved.displayName);
         setSignalingUrl(
           PREVIOUS_LAN_URLS.includes(saved.signalingUrl)
             ? DEFAULT_SIGNALING_URL
@@ -300,11 +323,13 @@ function App() {
   const startWithSession = async () => {
     const session = await saveSession({
       userId: identity.trim(),
+      displayName: displayName.trim(),
       signalingUrl: signalingUrl.trim(),
       deviceId: deviceId ?? undefined,
     });
     setDeviceId(session.deviceId);
     setIdentity(session.userId);
+    setDisplayName(session.displayName);
     setSignalingUrl(session.signalingUrl);
     setStarted(true);
   };
@@ -344,6 +369,15 @@ function App() {
               style={styles.input}
               value={identity}
             />
+            <Text style={styles.label}>Your display name</Text>
+            <TextInput
+              accessibilityLabel="Your display name"
+              autoCapitalize="words"
+              onChangeText={setDisplayName}
+              placeholder="Alice"
+              style={styles.input}
+              value={displayName}
+            />
             <Text style={styles.label}>Signaling WebSocket URL</Text>
             <TextInput
               accessibilityLabel="Signaling WebSocket URL"
@@ -354,7 +388,9 @@ function App() {
               value={signalingUrl}
             />
             <DialerButton
-              disabled={!identity.trim() || !signalingUrl.trim()}
+              disabled={
+                !identity.trim() || !displayName.trim() || !signalingUrl.trim()
+              }
               label="Start calling app"
               onPress={() => {
                 void startWithSession();
@@ -372,7 +408,7 @@ function App() {
         config={{
           signalingUrl: signalingUrl.trim(),
           userId: identity.trim(),
-          displayName: identity.trim(),
+          displayName: displayName.trim(),
           deviceId: deviceId ?? undefined,
           getAuthToken: async () => `dev:${identity.trim()}`,
           ringTimeoutMs: RING_TIMEOUT_MS,
@@ -386,6 +422,7 @@ function App() {
       >
         <CallingScreen
           userId={identity.trim()}
+          displayName={displayName.trim()}
           onLogout={() => void logout()}
         />
       </CallingProvider>

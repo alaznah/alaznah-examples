@@ -4,6 +4,7 @@ const SESSION_KEY = '@alaznah/demo-session/v1';
 
 export type SavedSession = {
   userId: string;
+  displayName: string;
   signalingUrl: string;
   deviceId: string;
   savedAt: number;
@@ -19,6 +20,9 @@ export async function loadSession(): Promise<SavedSession | null> {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as SavedSession;
     if (!parsed?.userId || !parsed?.signalingUrl) return null;
+    if (!parsed.displayName?.trim()) {
+      parsed.displayName = parsed.userId;
+    }
     if (!parsed.deviceId) {
       parsed.deviceId = createDeviceId();
       await saveSession(parsed);
@@ -35,6 +39,7 @@ export async function saveSession(
   const existing = await loadSession();
   const session: SavedSession = {
     userId: input.userId.trim(),
+    displayName: input.displayName.trim(),
     signalingUrl: input.signalingUrl.trim(),
     deviceId: input.deviceId ?? existing?.deviceId ?? createDeviceId(),
     savedAt: Date.now(),
