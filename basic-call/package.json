@@ -10,7 +10,7 @@
     "start": "react-native start",
     "test": "jest --runInBand",
     "typecheck": "tsc --noEmit",
-    "postinstall": "patch-package",
+    "postinstall": "patch-package --patch-dir node_modules/@alaznah/calling/patches",
     "bundle:android": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output build/index.android.bundle --assets-dest build/android-assets",
     "bundle:ios": "react-native bundle --platform ios --dev false --entry-file index.js --bundle-output build/main.jsbundle --assets-dest build/ios-assets"
   },
